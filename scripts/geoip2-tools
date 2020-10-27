@@ -1,0 +1,6 @@
+#!/usr/bin/env python
+from geoip2_tools.exceptions import catch
+from geoip2_tools.management import manage
+
+if __name__ == '__main__':
+    catch(manage)()
