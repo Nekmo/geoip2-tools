@@ -19,6 +19,10 @@ class Geoip2ToolsError(Exception):
         return msg
 
 
+class DatabaseNotExists(Geoip2ToolsError):
+    pass
+
+
 def catch(fn):
     def wrap(*args, **kwargs):
         try:
