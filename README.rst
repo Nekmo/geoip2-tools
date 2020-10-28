@@ -59,7 +59,7 @@ downloaded from the Maxmind servers.
 
     geoip2_manager = Geoip2DataBaseManager('<license key>')
 
-    print(geoip2_manager['country'].reader.country('1.1.1.1').country.name)
+    print(geoip2_manager['country'].reader.country('1.1.1.1').country.name)  # Australia
 
 Geoip2-tools has aliases for the *city*, *country*, and *asn* Geolite2 databases. The country database is smaller than
 city. The city database also contains the countries:
@@ -70,3 +70,10 @@ city. The city database also contains the countries:
     print(city.city.name)
     print(city.country.name)
 
+To obtain the ASN you must use the asn database:
+
+.. code-block:: python
+
+    asn = geoip2_manager['country'].reader.asn('<ip address>')
+    print(asn.autonomous_system_number)
+    print(asn.autonomous_system_organization)
