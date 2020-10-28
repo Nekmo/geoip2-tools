@@ -1,7 +1,7 @@
 import datetime
 from typing import Union
 
-from geoip2_tools.database import DATABASE_ALIASES, Geoip2DataBase
+from geoip2_tools.database import DATABASE_ALIASES, Geoip2DataBase, GEOIP2_MAXMIND_LICENSE_KEY_ENVNAME
 
 
 DEFAULT_EXPIRATION = datetime.timedelta(days=7)
@@ -15,6 +15,9 @@ class Geoip2DataBaseManager:
         self.license_key = license_key
         self.opened_databases = {}
         self.expiration = expiration or DEFAULT_EXPIRATION
+
+    def is_license_key_available(self):
+        return self.license_key or os.environ.get(GEOIP2_MAXMIND_LICENSE_KEY_ENVNAME)
 
     def open_database(self, edition_id: str):
         database = Geoip2DataBase(edition_id, self.directory, self.license_key)

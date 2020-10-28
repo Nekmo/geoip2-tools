@@ -26,7 +26,7 @@ class Geoip2DataBase:
                  license_key: Union[str, None] = None):
         self.edition_id = DATABASE_ALIASES.get(edition_id, edition_id)
         self.directory = directory or GEOIP2_TOOLS_DIRECTORY
-        self.license_key = license_key or os.environ.get('GEOIP2_MAXMIND_LICENSE_KEY_ENVNAME')
+        self.license_key = license_key or os.environ.get(GEOIP2_MAXMIND_LICENSE_KEY_ENVNAME)
         self._reader = None
         assert self.license_key is not None, "A MaxMind license is required."
 
