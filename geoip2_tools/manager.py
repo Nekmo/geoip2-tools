@@ -1,4 +1,5 @@
 import datetime
+import os
 from typing import Union
 
 from geoip2_tools.database import DATABASE_ALIASES, Geoip2DataBase, GEOIP2_MAXMIND_LICENSE_KEY_ENVNAME
