@@ -125,7 +125,7 @@ html_theme_options = {
     'github_repo': 'geoip2_tools',
     'github_type': 'star',
     'github_banner': True,
-    'travis_button': True,
+    'travis_button': False,
     'codecov_button': True,
     'analytics_id': 'UA-62276079-1',
     'canonical_url': 'http://docs.nekmo.org/geoip2-tools/'

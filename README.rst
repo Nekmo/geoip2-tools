@@ -3,9 +3,9 @@ geoip2-tools
 ############
 
 
-.. image:: https://img.shields.io/travis/Nekmo/geoip2-tools.svg?style=flat-square&maxAge=2592000
-  :target: https://travis-ci.org/Nekmo/geoip2-tools
-  :alt: Latest Travis CI build status
+.. image:: https://img.shields.io/github/workflow/status/Nekmo/geoip-tools/Tests.svg?style=flat-square&maxAge=2592000
+  :target: https://github.com/Nekmo/geoip-tools/actions?query=workflow%3ATests
+  :alt: Latest Tests CI build status
 
 .. image:: https://img.shields.io/pypi/v/geoip2-tools.svg?style=flat-square
   :target: https://pypi.org/project/geoip2-tools/
