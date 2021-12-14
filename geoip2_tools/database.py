@@ -2,6 +2,7 @@ import datetime
 import os
 import tarfile
 import tempfile
+import portalocker
 from typing import Union
 
 import geoip2.database
@@ -37,10 +38,7 @@ class Geoip2DataBase:
 
     @property
     def path(self) -> str:
-        if self._path is None:
-            fd, self._path = tempfile.mkstemp(dir=self.directory, suffix=f'{self.edition_id}.mmdb')
-            os.close(fd)
-        return self._path
+        return os.path.join(self.directory, f'{self.edition_id}.mmdb')
 
     def download_params(self) -> dict:
         return {
@@ -50,21 +48,32 @@ class Geoip2DataBase:
         }
 
     def download(self) -> None:
-        tar_path = f'{self.path}.tar.gz'
-        r = requests.get(GEOIP2_DOWNLOAD_URL, params=self.download_params(), stream=True)
-        if self.directory:
-            os.makedirs(self.directory, exist_ok=True)
+        # Lock the database file during download in case another process lands
+        # here.
+        with portalocker.Lock(self.path) as l:
+            # We have obtained the lock, check if another process has already
+            # completed the download and skip it if so.
+            if os.path.getsize(self.path) != 0:
+                return
 
-        with open(tar_path, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=DOWNLOAD_CHUNK_SIZE):
-                if chunk:  # filter out keep-alive new chunks
-                    f.write(chunk)
+            # We have the lock on an empty file, so let's write some data to it.
+            tar_path = f'{self.path}.tar.gz'
+            r = requests.get(GEOIP2_DOWNLOAD_URL, params=self.download_params(), stream=True)
+            if self.directory:
+                os.makedirs(self.directory, exist_ok=True)
 
-        tar = tarfile.open(tar_path, "r:gz")
-        member_path = next(filter(lambda x: x.endswith('.mmdb'), tar.getnames()))
-        extract_file_to(tar, member_path, self.path)
-        tar.close()
-        os.remove(tar_path)
+            with tempfile.NamedTemporaryFile(suffix='.tar.gz') as t:
+                for chunk in r.iter_content(chunk_size=DOWNLOAD_CHUNK_SIZE):
+                    if chunk:  # filter out keep-alive new chunks
+                        t.write(chunk)
+                t.seek(0)
+
+                tar = tarfile.open(t, "r:gz")
+                member_path = next(filter(lambda x: x.endswith('.mmdb'), tar.getnames()))
+                extract_file_to(tar, member_path, l)
+                tar.close()
+
+            os.remove(tar_path)
 
     def updated_at(self) -> Union[None, datetime.datetime]:
         if not self.exists():
