@@ -1,6 +1,7 @@
 import datetime
 import os
 import tarfile
+import tempfile
 from typing import Union
 
 import geoip2.database
@@ -28,6 +29,7 @@ class Geoip2DataBase:
         self.directory = directory or GEOIP2_TOOLS_DIRECTORY
         self.license_key = license_key or os.environ.get(GEOIP2_MAXMIND_LICENSE_KEY_ENVNAME)
         self._reader = None
+        self._path = None
         assert self.license_key is not None, "A MaxMind license is required."
 
     def exists(self):
@@ -35,7 +37,10 @@ class Geoip2DataBase:
 
     @property
     def path(self) -> str:
-        return os.path.join(self.directory, f'{self.edition_id}.mmdb')
+        if self._path is None:
+            fd, self._path = tempfile.mkstemp(dir=self.directory, suffix=f'{self.edition_id}.mmdb')
+            os.close(fd)
+        return self._path
 
     def download_params(self) -> dict:
         return {
