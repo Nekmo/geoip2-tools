@@ -2,9 +2,10 @@ import sys
 
 
 def extract_file_to(tar, member_path, to):
-    obj = tar.extractfile(member_path)
+    opened, obj = False, tar.extractfile(member_path)
     if not hasattr(to, 'write'):
-        to = open(to, 'w')
+        opened = True
+        to = open(to, 'wb')
 
     try:
         if sys.version_info >= (3, 3):
@@ -15,4 +16,5 @@ def extract_file_to(tar, member_path, to):
             obj.close()
 
     finally:
-        to.close()
+        if opened:
+            to.close()
