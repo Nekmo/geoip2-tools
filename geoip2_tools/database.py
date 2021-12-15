@@ -68,7 +68,7 @@ class Geoip2DataBase:
                         t.write(chunk)
                 t.seek(0)
 
-                tar = tarfile.open(t, "r:gz")
+                tar = tarfile.open(fileobj=t, "r:gz")
                 member_path = next(filter(lambda x: x.endswith('.mmdb'), tar.getnames()))
                 extract_file_to(tar, member_path, l)
                 tar.close()
