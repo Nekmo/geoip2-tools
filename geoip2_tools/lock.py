@@ -51,7 +51,7 @@ class PosixLockFile(GenericLockFile):
 
 def lock_file(lock_file: str):
     if Lock is not None:
-        return Lock(lock_file)
+        return Lock(lock_file, timeout=DEFAULT_GENERIC_TIMEOUT)
     elif os.name == 'posix':
         return PosixLockFile(lock_file)
     else:
