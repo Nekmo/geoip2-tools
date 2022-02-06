@@ -77,3 +77,6 @@ To obtain the ASN you must use the asn database:
     asn = geoip2_manager['country'].reader.asn('<ip address>')
     print(asn.autonomous_system_number)
     print(asn.autonomous_system_organization)
+
+This library is compatible with multiple processes using a lock during the database download. For Windows with multiple
+processes ``portalocker`` is recommended. Install it using ``pip install portalocker``.
