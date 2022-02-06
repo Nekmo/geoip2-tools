@@ -51,20 +51,19 @@ class Geoip2DataBase:
     def download(self) -> None:
         # Lock the database file during download in case another process lands
         # here.
-        with lock_file('{}.lock'.format(self.path)) as lock:
+        with lock_file(f'{self.path}.lock') as lock:
 
             # We have the lock on an empty file, so let's write some data to it.
             r = requests.get(GEOIP2_DOWNLOAD_URL, params=self.download_params(), stream=True)
-            if self.directory:
-                os.makedirs(self.directory, exist_ok=True)
+            os.makedirs(self.directory, exist_ok=True)
 
-            with tempfile.NamedTemporaryFile(suffix='.tar.gz') as t:
+            with tempfile.NamedTemporaryFile(suffix='.tar.gz') as temp_file:
                 for chunk in r.iter_content(chunk_size=DOWNLOAD_CHUNK_SIZE):
                     if chunk:  # filter out keep-alive new chunks
-                        t.write(chunk)
-                t.seek(0)
+                        temp_file.write(chunk)
+                temp_file.seek(0)
 
-                tar = tarfile.open(mode="r:gz", fileobj=t)
+                tar = tarfile.open(mode="r:gz", fileobj=temp_file)
                 member_path = next(filter(lambda x: x.endswith('.mmdb'), tar.getnames()))
                 extract_file_to(tar, member_path, lock)
                 tar.close()

@@ -7,6 +7,12 @@ DEFAULT_GENERIC_TIMEOUT = 60 * 15
 DEFAULT_SLEEP = .1
 
 
+try:
+    from portalocker import Lock
+except ImportError:
+    Lock = None
+
+
 class GenericLockFile:
     def __init__(self, lock_file: str, timeout: int = DEFAULT_GENERIC_TIMEOUT,
                  sleep: float = DEFAULT_SLEEP):
@@ -44,7 +50,9 @@ class PosixLockFile(GenericLockFile):
 
 
 def lock_file(lock_file: str):
-    if os.name == 'posix':
+    if Lock is not None:
+        return Lock(lock_file)
+    elif os.name == 'posix':
         return PosixLockFile(lock_file)
     else:
         return GenericLockFile(lock_file)
