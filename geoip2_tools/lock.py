@@ -40,13 +40,13 @@ class PosixLockFile(GenericLockFile):
     def __enter__(self):
         import fcntl
         self.lock_file.touch()
-        with open(str(self.lock_file), 'w') as f:
-            fcntl.flock(f, fcntl.LOCK_EX)
+        self.file = open(str(self.lock_file), 'w')
+        fcntl.flock(self.file, fcntl.LOCK_EX)
 
     def __exit__(self, *args):
         import fcntl
-        with open(str(self.lock_file), 'w') as f:
-            fcntl.flock(f, fcntl.LOCK_UN)
+        fcntl.flock(self.file, fcntl.LOCK_UN)
+        self.file.close()
 
 
 def lock_file(lock_file: str):

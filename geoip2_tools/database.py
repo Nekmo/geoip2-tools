@@ -22,14 +22,17 @@ GEOIP2_TOOLS_DIRECTORY = os.environ.get('GEOIP2_TOOLS_DIRECTORY', DEFAULT_GEOIP2
 GEOIP2_DOWNLOAD_URL = 'https://download.maxmind.com/app/geoip_download'
 GEOIP2_MAXMIND_LICENSE_KEY_ENVNAME = 'GEOIP2_MAXMIND_LICENSE_KEY'
 DOWNLOAD_CHUNK_SIZE = 1024 * 4
+DEFAULT_EXPIRATION = datetime.timedelta(days=7)
 
 
 class Geoip2DataBase:
     def __init__(self, edition_id: str, directory: Union[str, None] = None,
-                 license_key: Union[str, None] = None):
+                 license_key: Union[str, None] = None,
+                 expiration: datetime.timedelta = DEFAULT_EXPIRATION):
         self.edition_id = DATABASE_ALIASES.get(edition_id, edition_id)
         self.directory = directory or GEOIP2_TOOLS_DIRECTORY
         self.license_key = license_key or os.environ.get(GEOIP2_MAXMIND_LICENSE_KEY_ENVNAME)
+        self.expiration = expiration
         self._reader = None
         self._path = None
         assert self.license_key is not None, "A MaxMind license is required."
@@ -48,12 +51,19 @@ class Geoip2DataBase:
             'suffix': 'tar.gz',
         }
 
-    def download(self) -> None:
+    def check_updates(self) -> None:
+        """Download or update the database only if required update."""
         # Lock the database file during download in case another process lands
         # here.
+        if not self.required_updates():
+            return
         with lock_file(f'{self.path}.lock'):
-            self._download_database()
+            if self.required_updates():
+                self._download_database()
 
+    def required_updates(self):
+        now = datetime.datetime.now()
+        return not self.exists() or self.updated_at() + self.expiration < now
 
     def _download_database(self):
         # Start connection to geoip2 servers
