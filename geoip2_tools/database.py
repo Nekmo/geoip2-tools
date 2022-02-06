@@ -1,8 +1,8 @@
 import datetime
 import os
+import shutil
 import tarfile
 import tempfile
-import portalocker
 from typing import Union
 
 import geoip2.database
@@ -51,22 +51,31 @@ class Geoip2DataBase:
     def download(self) -> None:
         # Lock the database file during download in case another process lands
         # here.
-        with lock_file(f'{self.path}.lock') as lock:
+        with lock_file(f'{self.path}.lock'):
+            self._download_database()
 
-            # We have the lock on an empty file, so let's write some data to it.
-            r = requests.get(GEOIP2_DOWNLOAD_URL, params=self.download_params(), stream=True)
-            os.makedirs(self.directory, exist_ok=True)
 
-            with tempfile.NamedTemporaryFile(suffix='.tar.gz') as temp_file:
-                for chunk in r.iter_content(chunk_size=DOWNLOAD_CHUNK_SIZE):
-                    if chunk:  # filter out keep-alive new chunks
-                        temp_file.write(chunk)
-                temp_file.seek(0)
+    def _download_database(self):
+        # Start connection to geoip2 servers
+        r = requests.get(GEOIP2_DOWNLOAD_URL, params=self.download_params(), stream=True)
+        os.makedirs(self.directory, exist_ok=True)
 
-                tar = tarfile.open(mode="r:gz", fileobj=temp_file)
-                member_path = next(filter(lambda x: x.endswith('.mmdb'), tar.getnames()))
-                extract_file_to(tar, member_path, lock)
-                tar.close()
+        # Creates two temporary files for write the tar file and the temp database
+        with tempfile.NamedTemporaryFile(suffix='.tar.gz') as tmp_tar_file, \
+                tempfile.NamedTemporaryFile(suffix='.tmp', delete=False) as tmp_database_file:
+            # Iterate over the geoip2's remote database
+            for chunk in r.iter_content(chunk_size=DOWNLOAD_CHUNK_SIZE):
+                if chunk:  # filter out keep-alive new chunks
+                    tmp_tar_file.write(chunk)
+            tmp_tar_file.seek(0)
+
+            # Write the tar file to a file and extract the database from the tar file to a temp file
+            tar = tarfile.open(mode="r:gz", fileobj=tmp_tar_file)
+            member_path = next(filter(lambda x: x.endswith('.mmdb'), tar.getnames()))
+            extract_file_to(tar, member_path, tmp_database_file)
+            tar.close()
+            # Move the tmp database file to the final destination
+            shutil.move(tmp_database_file.name, self.path)
 
     def updated_at(self) -> Union[None, datetime.datetime]:
         if not self.exists():
