@@ -9,6 +9,7 @@ import geoip2.database
 import requests
 
 from geoip2_tools.exceptions import DatabaseNotExists
+from geoip2_tools.lock import lock_file
 from geoip2_tools.utils import extract_file_to
 
 DATABASE_ALIASES = {
@@ -50,11 +51,7 @@ class Geoip2DataBase:
     def download(self) -> None:
         # Lock the database file during download in case another process lands
         # here.
-        with portalocker.Lock(self.path, mode='wb') as l:
-            # We have obtained the lock, check if another process has already
-            # completed the download and skip it if so.
-            if os.path.getsize(self.path) != 0:
-                return
+        with lock_file('{}.lock'.format(self.path)) as lock:
 
             # We have the lock on an empty file, so let's write some data to it.
             r = requests.get(GEOIP2_DOWNLOAD_URL, params=self.download_params(), stream=True)
@@ -69,7 +66,7 @@ class Geoip2DataBase:
 
                 tar = tarfile.open(mode="r:gz", fileobj=t)
                 member_path = next(filter(lambda x: x.endswith('.mmdb'), tar.getnames()))
-                extract_file_to(tar, member_path, l)
+                extract_file_to(tar, member_path, lock)
                 tar.close()
 
     def updated_at(self) -> Union[None, datetime.datetime]:
